@@ -1815,7 +1815,50 @@
       border: 1px solid #FDE68A;
       margin-top: 8px;
     }
-</style>
+
+    /* FULL SCREEN TOGGLE & EXPANDED NETWORK PAGE */
+    .btn-fullscreen-toggle {
+      background: #004B87;
+      color: #FFFFFF;
+      border: 1px solid #003366;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      height: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .btn-fullscreen-toggle:hover {
+      background: #002D5A;
+      box-shadow: 0 2px 6px rgba(0, 45, 90, 0.25);
+    }
+    #page-network {
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 14px 20px 40px 20px;
+    }
+    #page-network .net-matrix-card {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    #page-network.fullscreen-mode {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 99999 !important;
+      background: #F8FAFC !important;
+      padding: 16px 24px !important;
+      overflow-y: auto !important;
+      margin: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+
+  </style>
 </head>
 <body>
   <!-- CONFETTI CANVAS -->
@@ -2304,6 +2347,21 @@
             <img class="header-logo dyn-logo" src="" alt="MDP">
             <div class="header-titles">
               <h1>A2A MỞ KÊNH - TIẾN ĐỘ KẾT NỐI MẠNG LƯỚI TCTV</h1>
+            </div>
+          </div>
+          <div class="slicer-container">
+            <div class="pbi-slicer">
+              <span class="pbi-slicer-label">TCTV Phát lệnh</span>
+              <div class="pbi-multiselect" id="ms-net-sender"></div>
+            </div>
+            <div class="pbi-slicer">
+              <span class="pbi-slicer-label">TCTV Nhận lệnh</span>
+              <div class="pbi-multiselect" id="ms-net-receiver"></div>
+            </div>
+            <div class="pbi-slicer" style="display: flex; align-items: flex-end; padding-bottom: 2px;">
+              <button type="button" class="btn-fullscreen-toggle" onclick="toggleNetworkFullscreen()" title="Bật/Tắt chế độ toàn màn hình">
+                <i class="fa-solid fa-expand" id="icon-net-fs"></i> Toàn màn hình
+              </button>
             </div>
           </div>
         </div>
@@ -3101,14 +3159,16 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       a2a: { months: null, banks: null, sessions: null },
       budget: { months: null, banks: null },
       raw: { months: null, pmtDates: null, senders: null, receivers: null, statuses: null, refundReasons: null },
-      rec: { months: null, dates: null, banks: null }
+      rec: { months: null, dates: null, banks: null },
+      network: { senderBanks: null, receiverBanks: null }
     };
 
     window.G_SLICERS = {
       a2a: {},
       budget: {},
       raw: {},
-      rec: {}
+      rec: {},
+      network: {}
     };
 
     function setupMultiSlicers() {
@@ -3302,6 +3362,37 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
         options: recBanks.map(b => ({ value: b, label: b })),
         onChange: (vals) => { G_FILTERS.rec.banks = new Set(vals.map(String)); G_REC_PAGE = 1; renderPageReconcileDaily(); }
       });
+
+      // 5. Network Matrix Slicers (Sender Bank & Receiver Bank)
+      const netBanks = MASTER_BANKS.map(b => ({ value: b.label.substring(4), label: b.label }));
+      G_FILTERS.network = {
+        senderBanks: new Set(MASTER_BANKS.map(b => b.label.substring(4))),
+        receiverBanks: new Set(MASTER_BANKS.map(b => b.label.substring(4)))
+      };
+
+      const elNetSender = document.getElementById('ms-net-sender');
+      if (elNetSender) {
+        G_SLICERS.network.sender = new PbiMultiSelect({
+          containerId: 'ms-net-sender',
+          options: netBanks,
+          onChange: (vals) => {
+            G_FILTERS.network.senderBanks = new Set(vals);
+            renderPageNetworkMatrix();
+          }
+        });
+      }
+
+      const elNetReceiver = document.getElementById('ms-net-receiver');
+      if (elNetReceiver) {
+        G_SLICERS.network.receiver = new PbiMultiSelect({
+          containerId: 'ms-net-receiver',
+          options: netBanks,
+          onChange: (vals) => {
+            G_FILTERS.network.receiverBanks = new Set(vals);
+            renderPageNetworkMatrix();
+          }
+        });
+      }
     }
 
     // ================= FULLSCREEN FIREWORKS V7.0 (NO ALERTS, CENTER BURST) =================
@@ -3429,8 +3520,6 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       const toEl = document.getElementById('ov-date-to');
       if (!startDate && fromEl) startDate = fromEl.value;
       if (!endDate && toEl) endDate = toEl.value;
-      if (!startDate) startDate = '2026-03-29';
-      if (!endDate) endDate = '2026-09-24';
 
       // Cập nhật nhãn Kỳ dữ liệu trên cả 6 thẻ KPI
       const fromDisp = formatDateVN(startDate);
@@ -3439,184 +3528,124 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
         el.innerText = `${fromDisp} - ${toDisp}`;
       });
 
-      const isFullRange = (startDate <= '2026-03-30' && endDate >= '2026-09-24');
+      let planTx = 0, actTx = 0, planFee = 0, actFee = 0, actGmv = 0;
+      const bSet = new Set();
+      const budgetRecs = G_DATA.budget_actual_records || [];
 
-      let totalTxn = 0;
-      let totalAmount = 0;
-      let totalFee = 0;
-      let bankCount = 13;
-      let achTxn = 0;
-      let achFee = 0;
-
-      if (isFullRange) {
-        // Lấy số liệu chuẩn 100% từ A2A BUDGET TRACKING (Data_Budget Actual)
-        const budgetRecs = G_DATA.budget_actual_records || [];
-        let planTx = 0, actTx = 0, planFee = 0, actFee = 0, actGmv = 0;
-        const bSet = new Set();
-        budgetRecs.forEach(r => {
-          planTx += (r['B_MDP_Txn'] || 0);
-          actTx += (r['A_Txn_Debit'] || 0);
-          planFee += (r['B_MDP_Revenue2'] || 0);
-          actFee += (r['A_Revenue'] || 0);
-          actGmv += (r['A_GMV_Debit'] || 0);
-          if ((r['A_Txn_Debit'] || 0) > 0) bSet.add(r['TCTV']);
-        });
-
-        totalTxn = actTx > 0 ? actTx : 30939552;
-        totalAmount = actGmv > 0 ? actGmv : 136056587466328;
-        totalFee = actFee > 0 ? actFee : 4631891590;
-        bankCount = bSet.size > 0 ? bSet.size : 13;
-        achTxn = planTx > 0 ? (totalTxn / planTx) : 0.0152;
-        achFee = planFee > 0 ? (totalFee / planFee) : 0.0229;
-      } else {
-        // Khi người dùng chọn khoảng ngày tùy chỉnh: Lọc theo kỳ tháng tương ứng của Budget Actual
-        const fromM = parseInt(startDate.replace(/-/g, '').substring(0, 6));
-        const toM = parseInt(endDate.replace(/-/g, '').substring(0, 6));
-        const filteredBudget = (G_DATA.budget_actual_records || []).filter(r => {
-          const rm = parseInt(r['Rptmonth']);
-          return rm >= fromM && rm <= toM;
-        });
-
-        let planTx = 0, actTx = 0, planFee = 0, actFee = 0, actGmv = 0;
-        const bSet = new Set();
-        filteredBudget.forEach(r => {
-          planTx += (r['B_MDP_Txn'] || 0);
-          actTx += (r['A_Txn_Debit'] || 0);
-          planFee += (r['B_MDP_Revenue2'] || 0);
-          actFee += (r['A_Revenue'] || 0);
-          actGmv += (r['A_GMV_Debit'] || 0);
-          if ((r['A_Txn_Debit'] || 0) > 0) bSet.add(r['TCTV']);
-        });
-
-        totalTxn = actTx;
-        totalAmount = actGmv;
-        totalFee = actFee;
-        bankCount = bSet.size;
-        achTxn = planTx > 0 ? (actTx / planTx) : 0;
-        achFee = planFee > 0 ? (actFee / planFee) : 0;
+      // Lọc theo khoảng ngày / tháng đã chọn
+      let filteredBudget = budgetRecs;
+      if (startDate && endDate) {
+        const fromM = parseInt(String(startDate).replace(/-/g, '').substring(0, 6), 10);
+        const toM = parseInt(String(endDate).replace(/-/g, '').substring(0, 6), 10);
+        if (!isNaN(fromM) && !isNaN(toM)) {
+          filteredBudget = budgetRecs.filter(r => {
+            const rm = parseInt(String(r['Rptmonth'] || r['Tháng Sort'] || '0').replace(/-/g, '').substring(0, 6), 10);
+            return rm >= fromM && rm <= toM;
+          });
+        }
       }
 
-      document.getElementById('kpi-ov-txn').innerText = fmtInt(totalTxn);
-      document.getElementById('kpi-ov-amount').innerText = fmtCurrency(totalAmount);
-      document.getElementById('kpi-ov-bank').innerText = `${bankCount} TCTV`;
-      document.getElementById('kpi-ov-fee').innerText = fmtCurrency(totalFee);
-      document.getElementById('kpi-ov-ach-txn').innerText = fmtPct(achTxn);
-      document.getElementById('kpi-ov-ach-fee').innerText = fmtPct(achFee);
+      filteredBudget.forEach(r => {
+        const pTx = Number(r['B_MDP_Txn'] ?? r['SL giao dịch kế hoạch']) || 0;
+        const aTx = Number(r['A_Txn_Debit'] ?? r['SL giao dịch thực tế']) || 0;
+        const pFee = Number(r['B_MDP_Revenue2'] ?? r['Phí dịch vụ kế hoạch']) || 0;
+        const aFee = Number(r['A_Revenue'] ?? r['Phí dịch vụ thực tế']) || 0;
+        const aGmv = Number(r['A_GMV_Debit'] ?? r['Doanh số giao dịch thực tế'] ?? r['Số tiền giao dịch thanh toán']) || 0;
+        const tctv = r['TCTV'] || r['Ngân hàng'] || r['Mã ngân hàng'];
+        planTx += pTx;
+        actTx += aTx;
+        planFee += pFee;
+        actFee += aFee;
+        actGmv += aGmv;
+        if (aTx > 0 && tctv) bSet.add(tctv);
+      });
+
+      // Tự động tổng hợp từ raw_detail_records nếu sheet ngân sách trống hoặc actTx == 0
+      if (actTx === 0 && G_DATA.raw_detail_records && G_DATA.raw_detail_records.length > 0) {
+        G_DATA.raw_detail_records.forEach(r => {
+          let pDate = r.Pmt_Date ? String(r.Pmt_Date).substring(0, 10) : '';
+          if (startDate && pDate && pDate < startDate) return;
+          if (endDate && pDate && pDate > endDate) return;
+          const tx = Number(r.NO_TXN) || 0;
+          const amt = Number(r.Amount) || 0;
+          actTx += tx;
+          actGmv += amt;
+          if (r.C_Sender_Name) bSet.add(r.C_Sender_Name);
+          if (r.C_Receiver_Name) bSet.add(r.C_Receiver_Name);
+        });
+        if (actFee === 0) actFee = Math.round(actTx * 150);
+      }
+
+      const totalTxn = actTx;
+      const totalAmount = actGmv;
+      const totalFee = actFee;
+      const bankCount = bSet.size > 0 ? bSet.size : 13;
+      const achTxn = planTx > 0 ? (totalTxn / planTx) : 0;
+      const achFee = planFee > 0 ? (totalFee / planFee) : 0;
+
+      const elTxn = document.getElementById('kpi-ov-txn');
+      if (elTxn) elTxn.innerText = fmtInt(totalTxn);
+      const elAmt = document.getElementById('kpi-ov-amount');
+      if (elAmt) elAmt.innerText = fmtCurrency(totalAmount);
+      const elBank = document.getElementById('kpi-ov-bank');
+      if (elBank) elBank.innerText = `${bankCount} TCTV`;
+      const elFee = document.getElementById('kpi-ov-fee');
+      if (elFee) elFee.innerText = fmtCurrency(totalFee);
+      const elAchTxn = document.getElementById('kpi-ov-ach-txn');
+      if (elAchTxn) elAchTxn.innerText = fmtPct(achTxn);
+      const elAchFee = document.getElementById('kpi-ov-ach-fee');
+      if (elAchFee) elAchFee.innerText = fmtPct(achFee);
 
       const subTxn = document.getElementById('sub-ov-ach-txn');
-      if (subTxn) subTxn.innerText = `TT: ${fmtInt(totalTxn)} / KH: 2.041.166.997`;
+      if (subTxn) subTxn.innerText = `TT: ${fmtInt(totalTxn)} / KH: ${fmtInt(planTx)}`;
       const subFee = document.getElementById('sub-ov-ach-fee');
-      if (subFee) subFee.innerText = `TT: ${fmtCurrency(totalFee)} / KH: 202.493.900.602 đ`;
-    }
-
-    let G_TIMELINE_RUNNER_TIMER = null;
-    let G_TIMELINE_RUNNER_TIMEOUT_1 = null;
-    let G_TIMELINE_RUNNER_TIMEOUT_2 = null;
-
-    function stopTimelineRunner() {
-      if (G_TIMELINE_RUNNER_TIMER) {
-        clearInterval(G_TIMELINE_RUNNER_TIMER);
-        G_TIMELINE_RUNNER_TIMER = null;
-      }
-      if (G_TIMELINE_RUNNER_TIMEOUT_1) {
-        clearTimeout(G_TIMELINE_RUNNER_TIMEOUT_1);
-        G_TIMELINE_RUNNER_TIMEOUT_1 = null;
-      }
-      if (G_TIMELINE_RUNNER_TIMEOUT_2) {
-        clearTimeout(G_TIMELINE_RUNNER_TIMEOUT_2);
-        G_TIMELINE_RUNNER_TIMEOUT_2 = null;
-      }
-      const fc = document.getElementById('fireworks-canvas');
-      if (fc) fc.style.display = 'none';
-      if (G_FW_ANIMATION) {
-        cancelAnimationFrame(G_FW_ANIMATION);
-        G_FW_ANIMATION = null;
-      }
-    }
-
-    function startTimelineRunner(has1MDay) {
-      stopTimelineRunner();
-
-      const arrow = document.getElementById('timeline-arrow-indicator');
-      if (!arrow) return;
-
-      const targetPos = has1MDay ? 'calc(50% - 14px)' : '32px';
-
-      function runCycle() {
-        const curArrow = document.getElementById('timeline-arrow-indicator');
-        if (!curArrow) return;
-        curArrow.style.transition = 'none';
-        curArrow.style.left = '32px';
-
-        G_TIMELINE_RUNNER_TIMEOUT_1 = setTimeout(() => {
-          const a = document.getElementById('timeline-arrow-indicator');
-          if (!a) return;
-          a.style.transition = 'left 3s cubic-bezier(0.25, 1, 0.5, 1)';
-          a.style.left = targetPos;
-
-          if (has1MDay) {
-            // Khi có ngày đạt >= 1.000.000 GD (sau 3s), tự động bắn pháo hoa ở chính giữa màn hình
-            G_TIMELINE_RUNNER_TIMEOUT_2 = setTimeout(() => {
-              const checkOv = document.getElementById('page-overview');
-              if (checkOv && checkOv.classList.contains('active') && document.getElementById('timeline-arrow-indicator')) {
-                triggerFullscreenFireworks(8);
-              }
-            }, 3000);
-          }
-        }, 300);
-      }
-
-      runCycle();
-      G_TIMELINE_RUNNER_TIMER = setInterval(runCycle, 14000);
+      if (subFee) subFee.innerText = `TT: ${fmtCurrency(totalFee)} / KH: ${fmtCurrency(planFee)}`;
     }
 
     function renderOverviewTimeline() {
       const container = document.getElementById('ov-timeline-section');
       if (!container) return;
 
-      // 1. Tính toán sản lượng theo từng ngày thực tế từ raw_detail_records theo trường Pmt_Date
-      const pmtDailyMap = {};
-      let maxPmtDay = null, maxPmtDayTxn = 0;
-
+      // 1. Tính toán sản lượng theo từng ngày từ trường Pmt_Date sheet A_Raw_Data
+      const dailyMap = {};
+      let maxDay = null, maxDayTxn = 0;
       const rawList = (G_DATA && G_DATA.raw_detail_records) || [];
       rawList.forEach(r => {
-        const pDate = r['Pmt_Date'] || r['Pmt_Date_Label'] || '';
-        const tx = Number(r['NO_TXN']) || 0;
-        if (pDate && tx > 0) {
-          const d = String(pDate).split(' ')[0].split('T')[0];
-          pmtDailyMap[d] = (pmtDailyMap[d] || 0) + tx;
+        if (r.Pmt_Date && String(r.Status).toUpperCase() !== 'REFUND') {
+          const d = String(r.Pmt_Date).substring(0, 10);
+          const tx = Number(r.NO_TXN) || 0;
+          dailyMap[d] = (dailyMap[d] || 0) + tx;
         }
       });
 
-      const sortedPmtDays = Object.keys(pmtDailyMap).sort();
-      sortedPmtDays.forEach(d => {
-        if (pmtDailyMap[d] > maxPmtDayTxn) {
-          maxPmtDayTxn = pmtDailyMap[d];
-          maxPmtDay = d;
+      const sortedDays = Object.keys(dailyMap).sort();
+      sortedDays.forEach(d => {
+        if (dailyMap[d] > maxDayTxn) {
+          maxDayTxn = dailyMap[d];
+          maxDay = d;
         }
       });
 
-      const firstPmtDay = sortedPmtDays[0] || '2026-03-29';
-      const m1M_day = sortedPmtDays.find(d => pmtDailyMap[d] >= 1000000);
-      const m10M_day = sortedPmtDays.find(d => pmtDailyMap[d] >= 10000000);
-      const m30M_day = sortedPmtDays.find(d => pmtDailyMap[d] >= 30000000);
-      const has1MDay = Boolean(m1M_day);
+      const firstDay = sortedDays[0] || '2026-03-29';
+      const m1M_day = sortedDays.find(d => dailyMap[d] >= 1000000);
+      const m10M_day = sortedDays.find(d => dailyMap[d] >= 10000000);
+      const m30M_day = sortedDays.find(d => dailyMap[d] >= 30000000);
 
-      const maxPct1M = ((maxPmtDayTxn / 1000000) * 100).toFixed(1);
+      const maxPct1M = ((maxDayTxn / 1000000) * 100).toFixed(1);
 
       // Nodes HTML
       let nodesHtml = `
         <!-- Node 1: Giao Dịch Đầu Tiên -->
-        <div class="timeline-node-item node-start">
+        <div class="timeline-node-item node-start" onmouseenter="triggerFullscreenFireworks(5)">
           <div class="timeline-node-circle"><i class="fa-solid fa-rocket"></i></div>
-          <div class="timeline-node-date">${formatDateVN(firstPmtDay)}</div>
+          <div class="timeline-node-date">${formatDateVN(firstDay)}</div>
           <div class="timeline-node-sub">GD Đầu Tiên</div>
         </div>
       `;
 
       if (m1M_day) {
         nodesHtml += `
-          <div class="timeline-node-item node-1m">
+          <div class="timeline-node-item node-1m" onmouseenter="triggerFullscreenFireworks(6)">
             <div class="timeline-node-circle"><i class="fa-solid fa-award"></i></div>
             <div class="timeline-node-date">${formatDateVN(m1M_day)}</div>
             <div class="timeline-node-sub">≥ 1.000.000 GD/ngày</div>
@@ -3626,139 +3655,115 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
         nodesHtml += `
           <div class="timeline-node-item node-target-pending" title="Chờ dữ liệu thực tế đạt ≥ 1.000.000 GD/ngày">
             <div class="timeline-node-circle"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="timeline-node-date" style="color: #D97706;">Mục tiêu: ≥ 1.000.000 GD/ngày</div>
-            <div class="timeline-node-sub" style="color: #64748B;">Chờ đạt mốc (Kỷ lục: ${fmtInt(maxPmtDayTxn)} GD)</div>
+            <div class="timeline-node-date" style="color: #D97706;">Mục tiêu: 1.000.000 GD/ngày</div>
+            <div class="timeline-node-sub" style="color: #64748B;">Chờ đạt mốc (Kỷ lục: ${fmtInt(maxDayTxn)})</div>
           </div>
         `;
       }
 
       if (m10M_day) {
         nodesHtml += `
-          <div class="timeline-node-item node-10m">
+          <div class="timeline-node-item node-10m" onmouseenter="triggerFullscreenFireworks(6)">
             <div class="timeline-node-circle"><i class="fa-solid fa-fire"></i></div>
             <div class="timeline-node-date">${formatDateVN(m10M_day)}</div>
             <div class="timeline-node-sub">≥ 10.000.000 GD/ngày</div>
           </div>
         `;
-      } else {
+      } else if (m1M_day) {
         nodesHtml += `
           <div class="timeline-node-item node-target-pending" title="Chờ dữ liệu thực tế đạt ≥ 10.000.000 GD/ngày">
-            <div class="timeline-node-circle"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="timeline-node-date" style="color: #D97706;">Mục tiêu: ≥ 10.000.000 GD/ngày</div>
-            <div class="timeline-node-sub" style="color: #64748B;">Chờ đạt mốc</div>
+            <div class="timeline-node-circle"><i class="fa-solid fa-bullseye"></i></div>
+            <div class="timeline-node-date" style="color: #0284C7;">Mục tiêu 10.000.000 GD/ngày</div>
+            <div class="timeline-node-sub">Chờ đạt mốc</div>
           </div>
         `;
       }
 
       if (m30M_day) {
         nodesHtml += `
-          <div class="timeline-node-item node-30m">
-            <div class="timeline-node-circle"><i class="fa-solid fa-crown"></i></div>
+          <div class="timeline-node-item node-30m" onmouseenter="triggerFullscreenFireworks(8)">
+            <div class="timeline-node-circle"><i class="fa-solid fa-trophy"></i></div>
             <div class="timeline-node-date">${formatDateVN(m30M_day)}</div>
             <div class="timeline-node-sub">≥ 30.000.000 GD/ngày</div>
           </div>
         `;
+      }
+
+      // Cards HTML
+      let cardsHtml = `
+        <div class="milestone-card-v7 card-blue" onmouseenter="triggerFullscreenFireworks(5)">
+          <div class="milestone-card-date"><i class="fa-solid fa-calendar-check"></i> ${formatDateVN(firstDay)}</div>
+          <div class="milestone-card-title">Khởi Động: Giao Dịch Đầu Tiên Trên NexNow</div>
+          <div class="milestone-card-body">
+            Đêm 28 - Rạng sáng 29/03/2026: Hệ thống lõi chuyển mạch NexNow chính thức vận hành với giao dịch thanh quyết toán đầu tiên thành công giữa <strong>Techcombank và VPBank</strong>.
+          </div>
+          <div style="margin-top: 6px;"><span class="badge" style="background:#EBF3FB; color:#075697; font-weight:700; font-size:11px; padding:3px 8px; border-radius:10px;"><i class="fa-solid fa-check"></i> Đã hoàn thành</span></div>
+        </div>
+      `;
+
+      if (m1M_day) {
+        cardsHtml += `
+          <div class="milestone-card-v7 card-gold" onmouseenter="triggerFullscreenFireworks(6)">
+            <div class="milestone-card-date"><i class="fa-solid fa-award"></i> ${formatDateVN(m1M_day)}</div>
+            <div class="milestone-card-title">Bứt Phá: Cán Mốc 1.000.000 Giao Dịch / Ngày</div>
+            <div class="milestone-card-body">
+              Hệ thống chính thức xác lập kỷ lục vượt <strong>1.000.000 giao dịch trong một ngày thực tế</strong> (Pmt_Date: ${fmtInt(dailyMap[m1M_day])} GD).
+            </div>
+            <div style="margin-top: 6px;"><span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:700; font-size:11px; padding:3px 8px; border-radius:10px;"><i class="fa-solid fa-trophy"></i> Đã xác lập kỷ lục</span></div>
+          </div>
+        `;
       } else {
-        nodesHtml += `
-          <div class="timeline-node-item node-target-pending" title="Chờ dữ liệu thực tế đạt ≥ 30.000.000 GD/ngày">
-            <div class="timeline-node-circle"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="timeline-node-date" style="color: #D97706;">Mục tiêu: ≥ 30.000.000 GD/ngày</div>
-            <div class="timeline-node-sub" style="color: #64748B;">Chờ đạt mốc</div>
+        cardsHtml += `
+          <div class="milestone-card-v7 card-target-pending">
+            <div class="milestone-card-date" style="color: #D97706;"><i class="fa-solid fa-hourglass-half"></i> Đang Chờ Dữ Liệu Thực Tế</div>
+            <div class="milestone-card-title">Mục Tiêu Tiếp Theo: Cán Mốc 1.000.000 Giao Dịch / Ngày</div>
+            <div class="milestone-card-body">
+              Căn cứ dữ liệu giao dịch thực tế theo từng ngày (trường <code>Pmt_Date</code> sheet <code>A_Raw_Data</code>). Cho đến nay chưa có ngày nào đạt mốc &ge; 1.000.000 GD/ngày.
+            </div>
+            <div class="milestone-badge-pending">
+              <i class="fa-solid fa-chart-line"></i> Kỷ lục hiện tại: <strong>${fmtInt(maxDayTxn)} GD</strong> (${formatDateVN(maxDay)}) - Đạt <strong>${maxPct1M}%</strong> mục tiêu
+            </div>
           </div>
         `;
       }
 
       container.innerHTML = `
-        <div class="ov-timeline-card">
-          <div class="ov-timeline-header">
-            <div class="ov-timeline-title">
-              <i class="fa-solid fa-chart-line"></i>
-              <span>TIẾN TRÌNH CÁC CỘT MỐC SỰ KIỆN QUAN TRỌNG (THEO DỮ LIỆU PMT_DATE THỰC TẾ)</span>
-            </div>
-            <div class="ov-timeline-actions">
-              <button class="btn-fireworks-test" onclick="triggerFullscreenFireworks(8)" title="Bắn pháo hoa thử nghiệm">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Bắn pháo hoa
-              </button>
-            </div>
+        <div class="timeline-controls-row">
+          <div class="timeline-status-info">
+            <i class="fa-solid fa-chart-line" style="color: #0284C7;"></i>
+            <span>DÒNG THỜI GIAN TĂNG TRƯỞNG LỊCH SỬ A2A (THEO NGÀY GIAO DỊCH PMT_DATE - TỪNG NGÀY)</span>
           </div>
+          <button type="button" class="btn-fireworks" onclick="triggerFullscreenFireworks(6)" style="background: linear-gradient(135deg, #075697, #0284C7); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Bắn pháo hoa chào mừng
+          </button>
+        </div>
 
-          <div class="timeline-track-wrapper">
-            <div class="timeline-line-base"></div>
-            <div class="timeline-line-progress" style="width: ${has1MDay ? '50%' : '5%'};"></div>
-
-            <div class="timeline-runner-arrow" id="timeline-arrow-indicator" title="Tiến trình sản lượng thực tế">
-              <i class="fa-solid fa-location-arrow"></i>
-            </div>
-
-            <div class="timeline-nodes-row">
-              ${nodesHtml}
-            </div>
+        <div class="timeline-track-wrapper">
+          <div class="timeline-line-base"></div>
+          <div class="timeline-line-progress" style="width: ${m1M_day ? '50%' : '15%'};"></div>
+          <div class="timeline-runner-arrow" id="timeline-runner" style="left: 32px;" title="Vị trí tiến trình" onclick="triggerFullscreenFireworks(5)">
+            <i class="fa-solid fa-arrow-right"></i>
           </div>
-
-          <div class="ov-timeline-details">
-            <!-- Card 1: Vận hành đầu tiên -->
-            <div class="ov-event-card card-success">
-              <div class="ov-event-card-top">
-                <span class="ov-event-card-type"><i class="fa-solid fa-flag-checkered"></i> Mốc Vận Hành</span>
-                <span class="ov-event-card-badge badge-completed"><i class="fa-solid fa-check"></i> Đã hoàn thành</span>
-              </div>
-              <div class="ov-event-card-title">Bắt Đầu Vận Hành & Khai Trương A2A (Ngày ${formatDateVN(firstPmtDay)})</div>
-              <div class="ov-event-card-desc">
-                Chính thức golive các luồng chuyển tiền A2A đầu tiên qua hệ thống VietQR NAPAS, kết nối các ngân hàng tiên phong.
-              </div>
-            </div>
-
-            <!-- Card 2: 1.000.000 GD/ngày -->
-            <div class="ov-event-card ${m1M_day ? 'card-success' : 'card-pending'}">
-              <div class="ov-event-card-top">
-                <span class="ov-event-card-type"><i class="fa-solid fa-trophy"></i> Cột Mốc Tăng Trưởng</span>
-                <span class="ov-event-card-badge ${m1M_day ? 'badge-completed' : 'badge-pending'}">
-                  ${m1M_day ? '<i class="fa-solid fa-check"></i> Đã hoàn thành' : '<i class="fa-solid fa-hourglass-half"></i> Đang tiến tới mốc (' + maxPct1M + '%)'}
-                </span>
-              </div>
-              <div class="ov-event-card-title">${m1M_day ? 'Cán Mốc 1.000.000 Giao Dịch / Ngày (Ngày ' + formatDateVN(m1M_day) + ')' : 'Mục Tiêu: Cán Mốc 1.000.000 Giao Dịch / Ngày'}</div>
-              <div class="ov-event-card-desc">
-                ${m1M_day
-                  ? `Hệ thống ghi nhận sản lượng đạt kỷ lục <strong>${fmtInt(pmtDailyMap[m1M_day])} GD</strong> trong ngày ${formatDateVN(m1M_day)}, hoàn thành xuất sắc mục tiêu giai đoạn 1.`
-                  : `Kỷ lục hiện tại: <strong>${fmtInt(maxPmtDayTxn)} GD</strong> (vào ngày ${formatDateVN(maxPmtDay)}). Hệ thống sẽ tự động chúc mừng & bắn pháo hoa ngay khi có ngày đạt mốc ≥ 1.000.000 GD!`
-                }
-              </div>
-            </div>
-
-            <!-- Card 3: 10.000.000 GD/ngày -->
-            <div class="ov-event-card ${m10M_day ? 'card-success' : 'card-pending'}">
-              <div class="ov-event-card-top">
-                <span class="ov-event-card-type"><i class="fa-solid fa-bullseye"></i> Mục Tiêu Quy Mô</span>
-                <span class="ov-event-card-badge ${m10M_day ? 'badge-completed' : 'badge-pending'}">
-                  ${m10M_day ? '<i class="fa-solid fa-check"></i> Đã hoàn thành' : '<i class="fa-solid fa-hourglass-half"></i> Chờ đạt mốc'}
-                </span>
-              </div>
-              <div class="ov-event-card-title">${m10M_day ? 'Cán Mốc 10.000.000 Giao Dịch / Ngày (Ngày ' + formatDateVN(m10M_day) + ')' : 'Mục Tiêu: Cán Mốc 10.000.000 Giao Dịch / Ngày'}</div>
-              <div class="ov-event-card-desc">
-                Mở rộng mạng lưới kết nối toàn bộ ngân hàng Big4 & TMCP lớn, đẩy mạnh thanh toán QR tại điểm bán.
-              </div>
-            </div>
-
-            <!-- Card 4: 30.000.000 GD/ngày -->
-            <div class="ov-event-card ${m30M_day ? 'card-success' : 'card-pending'}">
-              <div class="ov-event-card-top">
-                <span class="ov-event-card-type"><i class="fa-solid fa-crown"></i> Mục Tiêu Chiến Lược</span>
-                <span class="ov-event-card-badge ${m30M_day ? 'badge-completed' : 'badge-pending'}">
-                  ${m30M_day ? '<i class="fa-solid fa-check"></i> Đã hoàn thành' : '<i class="fa-solid fa-hourglass-half"></i> Chờ đạt mốc'}
-                </span>
-              </div>
-              <div class="ov-event-card-title">${m30M_day ? 'Cán Mốc 30.000.000 Giao Dịch / Ngày (Ngày ' + formatDateVN(m30M_day) + ')' : 'Mục Tiêu: Cán Mốc 30.000.000 Giao Dịch / Ngày'}</div>
-              <div class="ov-event-card-desc">
-                Trở thành hạ tầng thanh toán chuyển mạch quốc gia hàng đầu, phủ sóng thanh toán số toàn diện.
-              </div>
-            </div>
+          <div class="timeline-nodes-row">
+            ${nodesHtml}
           </div>
+        </div>
+
+        <div class="milestones-cards-grid-v7">
+          ${cardsHtml}
         </div>
       `;
 
-      // Khởi động runner hoạt họa (Chỉ kích hoạt pháo hoa khi has1MDay === true)
-      startTimelineRunner(has1MDay);
+      setTimeout(() => {
+        const runner = document.getElementById('timeline-runner');
+        if (runner) {
+          runner.style.left = m1M_day ? 'calc(50% - 15px)' : 'calc(25% - 15px)';
+        }
+      }, 300);
+    
     }
+
+    
 
     function renderPageOverview() {
       // 1. Cập nhật ngày min/max vào date slicer nếu có
@@ -4182,9 +4187,33 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       return { pCol, rCol, pStat, pNote, rStat, rNote, pDisplay, rDisplay };
     }
 
+    function toggleNetworkFullscreen() {
+      const page = document.getElementById('page-network');
+      if (!page) return;
+      page.classList.toggle('fullscreen-mode');
+      const icon = document.getElementById('icon-net-fs');
+      if (page.classList.contains('fullscreen-mode')) {
+        if (icon) icon.className = 'fa-solid fa-compress';
+      } else {
+        if (icon) icon.className = 'fa-solid fa-expand';
+      }
+    }
+
     function renderPageNetworkMatrix() {
       const matrixTable = document.getElementById('table-network-matrix');
       if (!matrixTable) return;
+
+      const activeSenders = MASTER_BANKS.filter(b => {
+        if (!G_FILTERS.network || !G_FILTERS.network.senderBanks || G_FILTERS.network.senderBanks.size === 0) return true;
+        const shortName = b.label.substring(4);
+        return G_FILTERS.network.senderBanks.has(shortName) || G_FILTERS.network.senderBanks.has(b.label) || G_FILTERS.network.senderBanks.has(b.id);
+      });
+
+      const activeReceivers = MASTER_BANKS.filter(b => {
+        if (!G_FILTERS.network || !G_FILTERS.network.receiverBanks || G_FILTERS.network.receiverBanks.size === 0) return true;
+        const shortName = b.label.substring(4);
+        return G_FILTERS.network.receiverBanks.has(shortName) || G_FILTERS.network.receiverBanks.has(b.label) || G_FILTERS.network.receiverBanks.has(b.id);
+      });
 
       let h = '<thead><tr>';
       h += `
@@ -4196,14 +4225,14 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
           <div class="txt-phat">PHÁT LỆNH</div>
         </th>
       `;
-      MASTER_BANKS.forEach(b => {
+      activeReceivers.forEach(b => {
         h += `<th class="net-col-header">${b.label}</th>`;
       });
       h += '</tr></thead><tbody>';
 
-      MASTER_BANKS.forEach(sb => {
+      activeSenders.forEach(sb => {
         h += `<tr><td class="net-row-header">${sb.label}</td>`;
-        MASTER_BANKS.forEach(rb => {
+        activeReceivers.forEach(rb => {
           if (sb.id === rb.id) {
             // Cùng ngân hàng: ô xám #D9D9D9 có đường gạch chéo
             h += `
@@ -4288,6 +4317,7 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       setCard('kpi-raw-timeout', 'sub-raw-timeout', countTimeout);
 
       renderRawRouteMatrix(filtered);
+      renderRawDrillTables(filtered);
       renderRawTablePagination(filtered);
     }
 
@@ -5628,7 +5658,8 @@ function openExcelModal() {
         'ms-a2a-month', 'ms-a2a-bank', 'ms-a2a-session',
         'ms-ba-month', 'ms-ba-bank',
         'ms-rd-month', 'ms-rd-bank', 'ms-rd-channel', 'ms-rd-status',
-        'ms-rec-month', 'ms-rec-bank'
+        'ms-rec-month', 'ms-rec-bank',
+        'ms-net-sender', 'ms-net-receiver'
       ];
       ids.forEach(id => {
         const el = document.getElementById(id);
@@ -5637,6 +5668,20 @@ function openExcelModal() {
       if (window.PbiMultiSelect && window.PbiMultiSelect.registry) {
         window.PbiMultiSelect.registry = [];
       }
+
+      // Reset Overview dates to min/max from raw data
+      if (G_DATA && G_DATA.raw_detail_records && G_DATA.raw_detail_records.length > 0) {
+        const dates = G_DATA.raw_detail_records.map(r => r.Pmt_Date ? String(r.Pmt_Date).substring(0, 10) : '').filter(Boolean).sort();
+        if (dates.length > 0) {
+          const minD = dates[0];
+          const maxD = dates[dates.length - 1];
+          const fromEl = document.getElementById('ov-date-from');
+          const toEl = document.getElementById('ov-date-to');
+          if (fromEl) { fromEl.min = minD; fromEl.max = maxD; fromEl.value = minD; }
+          if (toEl) { toEl.min = minD; toEl.max = maxD; toEl.value = maxD; }
+        }
+      }
+
       setupMultiSlicers();
 
       renderPageOverview();
