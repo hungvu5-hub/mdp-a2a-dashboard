@@ -1143,8 +1143,8 @@
       flex-shrink: 0;
     }
     .legend-chip-ready { background-color: #A9D18E; }
-    .legend-chip-progress { background-color: #FFE699; }
-    .legend-chip-notready { background-color: #F8CBAD; }
+    .legend-chip-progress { background-color: #FFF2CC; }
+    .legend-chip-notready { background-color: #F07765; }
 
     .net-matrix-card {
       background: #FFFFFF;
@@ -1837,25 +1837,212 @@
       background: #002D5A;
       box-shadow: 0 2px 6px rgba(0, 45, 90, 0.25);
     }
-    #page-network {
+    /* ================= MA TRẬN TIẾN ĐỘ KẾT NỐI (A2A MỞ KÊNH) AUTOFIT FULLSCREEN ================= */
+    #page-network:not(.active) {
+      display: none !important;
+    }
+    #page-network.active {
       width: 100% !important;
       max-width: 100% !important;
-      padding: 14px 20px 40px 20px;
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: calc(100vh - 65px) !important;
+      height: calc(100vh - 65px) !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      padding: 10px 16px !important;
+    }
+    #page-network .page-header-pbi {
+      margin-bottom: 6px !important;
+      flex-shrink: 0 !important;
+    }
+    #page-network .mo-kenh-legend-box {
+      background: #FFFFFF !important;
+      border: 1px solid #CBD5E1 !important;
+      border-radius: 6px !important;
+      padding: 6px 14px !important;
+      margin-bottom: 6px !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+      display: flex !important;
+      gap: 36px !important;
+      align-items: center !important;
+      flex-shrink: 0 !important;
     }
     #page-network .net-matrix-card {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: 0 !important;
       width: 100% !important;
       max-width: 100% !important;
+      background: #FFFFFF !important;
+      border: 1px solid #CBD5E1 !important;
+      border-radius: 6px !important;
+      padding: 4px !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+      margin-bottom: 0 !important;
+      overflow: hidden !important;
+    }
+    #page-network .table-responsive {
+      flex: 1 !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      display: flex !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: auto !important;
+    }
+    #page-network .net-matrix-table {
+      border-collapse: collapse !important;
+      width: 100% !important;
+      height: 100% !important;
+      table-layout: fixed !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+      margin: 0 !important;
+    }
+    #page-network .net-matrix-table thead tr {
+      height: 32px !important;
+    }
+    #page-network .net-matrix-table tbody tr {
+      height: calc((100% - 32px) / 13) !important;
+    }
+    #page-network .net-matrix-table th, #page-network .net-matrix-table td {
+      border: 1px solid #CBD5E1 !important;
+      box-sizing: border-box !important;
+      height: inherit !important;
+      padding: 0 !important;
+      position: relative !important;
+      vertical-align: middle !important;
+    }
+    #page-network .net-corner-cell {
+      position: relative !important;
+      background: #0B2847 !important;
+      color: #FFFFFF !important;
+      width: 84px !important;
+      min-width: 84px !important;
+      height: 100% !important;
+      padding: 0 !important;
+    }
+    #page-network .net-corner-cell .txt-phat {
+      position: absolute !important;
+      bottom: 3px !important;
+      left: 5px !important;
+      font-weight: 800 !important;
+      font-size: 9.5px !important;
+      color: #FFFFFF !important;
+      line-height: 1 !important;
+    }
+    #page-network .net-corner-cell .txt-nhan {
+      position: absolute !important;
+      top: 3px !important;
+      right: 5px !important;
+      font-weight: 800 !important;
+      font-size: 9.5px !important;
+      color: #FFFFFF !important;
+      line-height: 1 !important;
+    }
+    #page-network .net-col-header {
+      background: #5B9BD5 !important;
+      color: #002D5A !important;
+      font-weight: 800 !important;
+      font-size: 10px !important;
+      text-align: center !important;
+      padding: 2px 2px !important;
+      vertical-align: middle !important;
+      height: 32px !important;
+    }
+    #page-network .net-row-header {
+      background: #FFFFFF !important;
+      color: #002D5A !important;
+      font-weight: 700 !important;
+      font-size: 10px !important;
+      text-align: left !important;
+      padding: 2px 6px !important;
+      white-space: nowrap !important;
+      vertical-align: middle !important;
+      width: 84px !important;
+      min-width: 84px !important;
+      height: inherit !important;
+    }
+    #page-network .net-diag-cell {
+      position: relative !important;
+      background: #D6D6D6 !important;
+      height: inherit !important;
+      padding: 0 !important;
+    }
+    #page-network .net-split-cell {
+      position: relative !important;
+      height: inherit !important;
+      min-width: 72px !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: 1px solid #CBD5E1 !important;
+      cursor: pointer !important;
+    }
+    #page-network .net-tri-nhan {
+      position: absolute !important;
+      inset: 0 !important;
+      clip-path: polygon(0 0, 100% 0, 100% 100%) !important;
+      z-index: 1 !important;
+    }
+    #page-network .net-tri-phat {
+      position: absolute !important;
+      inset: 0 !important;
+      clip-path: polygon(0 0, 0 100%, 100% 100%) !important;
+      z-index: 1 !important;
+    }
+    #page-network .net-split-line {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      pointer-events: none !important;
+      z-index: 2 !important;
+    }
+    #page-network .net-txt-nhan {
+      position: absolute !important;
+      top: 2px !important;
+      right: 4px !important;
+      max-width: 85% !important;
+      text-align: right !important;
+      font-size: 8.5px !important;
+      line-height: 1.15 !important;
+      font-weight: 700 !important;
+      color: #1E293B !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      z-index: 3 !important;
+      pointer-events: none !important;
+    }
+    #page-network .net-txt-phat {
+      position: absolute !important;
+      bottom: 2px !important;
+      left: 4px !important;
+      max-width: 85% !important;
+      text-align: left !important;
+      font-size: 8.5px !important;
+      line-height: 1.15 !important;
+      font-weight: 700 !important;
+      color: #1E293B !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      z-index: 3 !important;
+      pointer-events: none !important;
     }
     #page-network.fullscreen-mode {
       position: fixed !important;
       inset: 0 !important;
       z-index: 99999 !important;
       background: #F8FAFC !important;
-      padding: 16px 24px !important;
-      overflow-y: auto !important;
+      padding: 10px 14px !important;
+      overflow: hidden !important;
       margin: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
 
   </style>
@@ -3236,27 +3423,23 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
 
       // 3. Raw Detail: 6 Slicers chuẩn xác (Tháng, Ngày, Sender, Receiver, Status, Refund Reason)
       const rawMonths = [...new Set((G_DATA.raw_detail_records || []).map(r => String(r['STLMT_Final_Month'] || r['Pmt_Month'] || '')).filter(Boolean))].sort();
-      const initialMonth = rawMonths.includes('202609') ? '202609' : (rawMonths[rawMonths.length - 1] || '');
-
-      // Lọc các giá trị khởi tạo tương ứng với initialMonth
-      const initialRawByMonth = (G_DATA.raw_detail_records || []).filter(r => String(r['STLMT_Final_Month'] || r['Pmt_Month'] || '') === initialMonth);
-      const rawPmtDates = [...new Set(initialRawByMonth.map(r => r['Pmt_Date_Label'] || (r['Pmt_Date'] ? r['Pmt_Date'].substring(0, 10) : '')).filter(Boolean))].sort();
-      const rawSenders = [...new Set(initialRawByMonth.map(r => r['C_Sender_Name']).filter(Boolean))].sort();
-      const rawReceivers = [...new Set(initialRawByMonth.map(r => r['C_Receiver_Name']).filter(Boolean))].sort();
+      const rawPmtDates = [...new Set((G_DATA.raw_detail_records || []).map(r => r['Pmt_Date_Label'] || (r['Pmt_Date'] ? r['Pmt_Date'].substring(0, 10) : '')).filter(Boolean))].sort();
+      const rawSenders = [...new Set((G_DATA.raw_detail_records || []).map(r => r['C_Sender_Name']).filter(Boolean))].sort();
+      const rawReceivers = [...new Set((G_DATA.raw_detail_records || []).map(r => r['C_Receiver_Name']).filter(Boolean))].sort();
       const rawStatuses = ['ACCEPTED', 'DENIED', 'EXPIRED', 'REJECTED', 'TIMEOUT'];
-      const rawRefundReasons = [...new Set((initialRawByMonth.length > 0 ? initialRawByMonth : G_DATA.raw_detail_records || []).map(r => (r['REFUND_REASON_CODE'] && String(r['REFUND_REASON_CODE']).trim()) ? String(r['REFUND_REASON_CODE']).trim() : 'NONE'))].sort();
+      const rawRefundReasons = [...new Set((G_DATA.raw_detail_records || []).map(r => (r['REFUND_REASON_CODE'] && String(r['REFUND_REASON_CODE']).trim()) ? String(r['REFUND_REASON_CODE']).trim() : 'NONE'))].sort();
 
-      G_FILTERS.raw.months = new Set([initialMonth]);
+      // Mặc định chọn tất cả để số lượng giao dịch thống nhất 100% với các sheet khác
+      G_FILTERS.raw.months = new Set(rawMonths);
       G_FILTERS.raw.pmtDates = new Set(rawPmtDates);
       G_FILTERS.raw.senders = new Set(rawSenders);
       G_FILTERS.raw.receivers = new Set(rawReceivers);
-      G_FILTERS.raw.statuses = new Set(['ACCEPTED', 'EXPIRED', 'TIMEOUT']);
-      G_FILTERS.raw.refundReasons = new Set(['NONE']);
+      G_FILTERS.raw.statuses = new Set(rawStatuses);
+      G_FILTERS.raw.refundReasons = new Set(rawRefundReasons);
 
       G_SLICERS.raw.month = new PbiMultiSelect({
         containerId: 'ms-raw-month',
         options: rawMonths.map(m => ({ value: m, label: m })),
-        defaultSelected: [initialMonth],
         onChange: (vals) => {
           G_FILTERS.raw.months = new Set(vals);
           // CASCADING RAW SLICERS:
@@ -3300,14 +3483,12 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       G_SLICERS.raw.status = new PbiMultiSelect({
         containerId: 'ms-raw-status',
         options: rawStatuses.map(s => ({ value: s, label: s })),
-        defaultSelected: ['ACCEPTED', 'EXPIRED', 'TIMEOUT'],
         onChange: (vals) => { G_FILTERS.raw.statuses = new Set(vals); G_RAW_PAGE = 1; renderPageRawDetail(); }
       });
 
       G_SLICERS.raw.refundReason = new PbiMultiSelect({
         containerId: 'ms-raw-refund-reason',
         options: rawRefundReasons.map(r => ({ value: r, label: r })),
-        defaultSelected: ['NONE'],
         onChange: (vals) => { G_FILTERS.raw.refundReasons = new Set(vals); G_RAW_PAGE = 1; renderPageRawDetail(); }
       });
 
@@ -4141,20 +4322,20 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       const s = String(stat || '').toLowerCase().trim();
       const n = String(note || '').toLowerCase().trim();
       
-      // Explicit status values
-      if (s === 'ready') return '#A9D18E'; // Pastel Mint Green
-      if (s === 'in progress' || s === 'inprogress') return '#FFE699'; // Pastel Light Yellow
-      if (s === 'not ready' || s === 'notready') return '#F8CBAD'; // Pastel Coral/Red
+      // Chuẩn 100% mã màu Power BI sampled (#A9D18E, #FFF2CC, #F07765)
+      if (s === 'ready') return '#A9D18E'; // Soft Pastel Green
+      if (s === 'in progress' || s === 'inprogress') return '#FFF2CC'; // Butter Soft Cream Yellow
+      if (s === 'not ready' || s === 'notready') return '#F07765'; // Vibrant Coral Red
       
       // Fallback deduction based on note
       if (n.startsWith('done') || n === 'ready' || n.includes('sẵn sàng') || n.includes('nhận mass') || n.includes('đã mở mass')) {
-        if (n.includes('chưa') || n.includes('lỗi') || n.includes('tạm đóng')) return '#F8CBAD';
+        if (n.includes('chưa') || n.includes('lỗi') || n.includes('tạm đóng')) return '#F07765';
         return '#A9D18E';
       }
       if (n.includes('pilot') || n.includes('cbnv') || n.includes('theo giờ') || n.includes('khung giờ') || n.includes('đang')) {
-        return '#FFE699';
+        return '#FFF2CC';
       }
-      return '#F8CBAD';
+      return '#F07765';
     }
 
     // Lấy thông tin trạng thái & màu sắc chi tiết cho từng cặp (sb, rb)
@@ -4269,19 +4450,33 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
     }
 
     function renderPageRawDetail() {
-      let filtered = G_DATA.raw_detail_records.filter(r => {
+      let filtered = (G_DATA.raw_detail_records || []).filter(r => {
         const m = String(r['STLMT_Final_Month'] || r['Pmt_Month'] || '');
         if (G_FILTERS.raw.months && G_FILTERS.raw.months.size > 0 && !G_FILTERS.raw.months.has(m)) return false;
+        
         const pDate = String(r['Pmt_Date_Label'] || (r['Pmt_Date'] ? String(r['Pmt_Date']).substring(0, 10) : ''));
         if (G_FILTERS.raw.pmtDates && G_FILTERS.raw.pmtDates.size > 0 && !G_FILTERS.raw.pmtDates.has(pDate)) return false;
-        const b = String(r['Bank'] || '');
-        if (G_FILTERS.raw.banks && G_FILTERS.raw.banks.size > 0 && !G_FILTERS.raw.banks.has(b)) return false;
-        const pMod = String(r['Pmt_Mode'] || '');
-        if (G_FILTERS.raw.pmtModes && G_FILTERS.raw.pmtModes.size > 0 && !G_FILTERS.raw.pmtModes.has(pMod)) return false;
-        const dir = String(r['Direction'] || '');
-        if (G_FILTERS.raw.directions && G_FILTERS.raw.directions.size > 0 && !G_FILTERS.raw.directions.has(dir)) return false;
-        const st = String(r['Status'] || '');
+        
+        const sBank = String(r['C_Sender_Name'] || r['Sender_Name'] || '');
+        if (G_FILTERS.raw.senders && G_FILTERS.raw.senders.size > 0 && !G_FILTERS.raw.senders.has(sBank)) return false;
+        
+        const rBank = String(r['C_Receiver_Name'] || r['Receive_Name'] || '');
+        if (G_FILTERS.raw.receivers && G_FILTERS.raw.receivers.size > 0 && !G_FILTERS.raw.receivers.has(rBank)) return false;
+        
+        const st = String(r['Status'] || '').toUpperCase();
         if (G_FILTERS.raw.statuses && G_FILTERS.raw.statuses.size > 0 && !G_FILTERS.raw.statuses.has(st)) return false;
+        
+        const refReason = String(r['REFUND_REASON_CODE'] || 'NONE').trim() || 'NONE';
+        if (G_FILTERS.raw.refundReasons && G_FILTERS.raw.refundReasons.size > 0 && !G_FILTERS.raw.refundReasons.has(refReason)) return false;
+        
+        // Cross-filtering
+        if (G_CROSS_FILTER.bank && sBank !== G_CROSS_FILTER.bank && rBank !== G_CROSS_FILTER.bank) return false;
+        if (G_CROSS_FILTER.status && st !== G_CROSS_FILTER.status.toUpperCase()) return false;
+        if (G_CROSS_FILTER.pmtDate) {
+          const rawD = r['Pmt_Date'] ? String(r['Pmt_Date']).split(' ')[0] : (r['Pmt_Date_Label'] || '');
+          if (rawD !== G_CROSS_FILTER.pmtDate && pDate !== G_CROSS_FILTER.pmtDate) return false;
+        }
+
         return true;
       });
 
@@ -4591,10 +4786,10 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       records.forEach(r => {
         const s = r['C_Sender_Name'] || 'Khác';
         if (!senderPivot[s]) senderPivot[s] = { mTxn: 0, mAmt: 0, aTxn: 0, aAmt: 0, tTxn: 0, tAmt: 0 };
-        const sess = r['STLMT_Final_Session'] || '1. Sáng';
+        const sess = String(r['STLMT_Final_Session'] || r['Phiên'] || r['Pmt_Session'] || '1. Sáng');
         const isSang = sess.includes('Sáng') || sess.includes('1.');
-        const tx = r['NO_TXN'] || 0;
-        const amt = r['Amount'] || 0;
+        const tx = Number(r['NO_TXN']) || 1;
+        const amt = Number(r['Amount']) || 0;
 
         if (isSang) {
           senderPivot[s].mTxn += tx; senderPivot[s].mAmt += amt;
@@ -4779,10 +4974,10 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
       records.forEach(r => {
         const rc = r['C_Receiver_Name'] || 'Khác';
         if (!recvPivot[rc]) recvPivot[rc] = { mTxn: 0, mAmt: 0, aTxn: 0, aAmt: 0, tTxn: 0, tAmt: 0 };
-        const sess = r['STLMT_Final_Session'] || '1. Sáng';
+        const sess = String(r['STLMT_Final_Session'] || r['Phiên'] || r['Pmt_Session'] || '1. Sáng');
         const isSang = sess.includes('Sáng') || sess.includes('1.');
-        const tx = r['NO_TXN'] || 0;
-        const amt = r['Amount'] || 0;
+        const tx = Number(r['NO_TXN']) || 1;
+        const amt = Number(r['Amount']) || 0;
 
         if (isSang) {
           recvPivot[rc].mTxn += tx; recvPivot[rc].mAmt += amt;
@@ -4975,10 +5170,21 @@ window.DASHBOARD_COMPACT_DATA = {"images": {".png_a2a_budget_top_bank_logo_axis.
 
       pageRows.forEach(r => {
         const tr = document.createElement('tr');
+        let stlDateDisp = '-';
+        if (r['STLMT_Final_Date']) {
+          const rawS = String(r['STLMT_Final_Date']).split(' ')[0];
+          const parts = rawS.split('-');
+          if (parts.length === 3 && parts[0].length === 4) {
+            stlDateDisp = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          } else {
+            stlDateDisp = rawS;
+          }
+        }
+        const sessionDisp = r['STLMT_Final_Session'] || r['Phiên'] || r['Pmt_Session'] || '-';
         tr.innerHTML = `
           <td>${r['Pmt_Date_Label'] || (r['Pmt_Date'] ? r['Pmt_Date'].substring(0, 10) : '-')}</td>
-          <td>${r['STLMT_Final_Date'] ? r['STLMT_Final_Date'].substring(0, 10) : '-'}</td>
-          <td>${r['STLMT_Final_Session'] || '-'}</td>
+          <td>${stlDateDisp}</td>
+          <td><strong>${sessionDisp}</strong></td>
           <td class="font-bold cursor-pointer" onclick="applyCrossFilter({ bank: '${r['C_Sender_Name']}' })">${r['C_Sender_Name'] || '-'}</td>
           <td class="font-bold cursor-pointer" onclick="applyCrossFilter({ bank: '${r['C_Receiver_Name']}' })">${r['C_Receiver_Name'] || '-'}</td>
           <td><span class="pbi-badge st-${(r['Status'] || 'accepted').toLowerCase()}">${r['Status'] || '-'}</span></td>
@@ -5410,6 +5616,7 @@ function openExcelModal() {
         const status = String(row[colIdx['STATUS']] || row[colIdx['Status']] || 'ACCEPTED').trim().toUpperCase();
         const amount = Number(row[colIdx['AMOUNT']] || row[colIdx['Amount']]) || 0;
         const noTxn = Number(row[colIdx['NO_TXN']]) || 1;
+        const refundReason = String(row[colIdx['REFUND_REASON_CODE']] || row[colIdx['Refund_Reason_Code']] || '').trim() || 'NONE';
 
         let pmtDate = '', pmtLabel = '', pmtMonth = '';
         if (sessPmt.length >= 11 && sessPmt.startsWith('TXN')) {
@@ -5432,11 +5639,42 @@ function openExcelModal() {
         if (sessStl.length >= 9 && sessStl.startsWith('STL')) {
           stlMonth = sessStl.substring(3, 9);
         } else {
-          stlMonth = pmtMonth;
+          stlMonth = String(row[colIdx['STLMT_Final_Month']] || row[colIdx['Rptmonth']] || pmtMonth).trim();
         }
 
-        const sInfo = BANK_LOOKUP[sendCode] || { name: sendCode, code: sendCode };
-        const rInfo = BANK_LOOKUP[recvCode] || { name: recvCode, code: recvCode };
+        let stlDate = '';
+        const rawStlDate = row[colIdx['STLMT_Final_Date']] || row[colIdx['Rpt_date']];
+        if (rawStlDate) {
+          stlDate = parseExcelDate(rawStlDate);
+        } else if (sessStl.length >= 11 && sessStl.startsWith('STL')) {
+          const yyyy = sessStl.substring(3, 7);
+          const mm = sessStl.substring(7, 9);
+          const dd = sessStl.substring(9, 11);
+          stlDate = `${yyyy}-${mm}-${dd} 00:00:00`;
+        } else {
+          stlDate = pmtDate;
+        }
+
+        // Nhận diện phiên Sáng / Chiều chuẩn xác
+        let stlSession = String(row[colIdx['STLMT_Final_Session']] || row[colIdx['Phiên']] || row[colIdx['Pmt_Session']] || '').trim();
+        if (!stlSession) {
+          if (sessStl.length >= 15) {
+            const hh = parseInt(sessStl.substring(9, 11), 10);
+            stlSession = hh >= 12 ? '2. Chiều' : '1. Sáng';
+          } else if (sessPmt.length >= 15) {
+            const hh = parseInt(sessPmt.substring(9, 11), 10);
+            stlSession = hh >= 12 ? '2. Chiều' : '1. Sáng';
+          } else {
+            stlSession = '1. Sáng';
+          }
+        } else if (!stlSession.startsWith('1.') && !stlSession.startsWith('2.')) {
+          stlSession = stlSession.includes('Chiều') ? '2. Chiều' : '1. Sáng';
+        }
+
+        const sNameRaw = String(row[colIdx['Sender_Name']] || '').trim();
+        const rNameRaw = String(row[colIdx['Receive_Name']] || '').trim();
+        const sInfo = (sNameRaw && resolveBank(sNameRaw)) ? resolveBank(sNameRaw) : (BANK_LOOKUP[sendCode] || { name: sendCode, code: sendCode });
+        const rInfo = (rNameRaw && resolveBank(rNameRaw)) ? resolveBank(rNameRaw) : (BANK_LOOKUP[recvCode] || { name: recvCode, code: recvCode });
 
         list.push({
           PAYMENT_SESSION_CODE: sessPmt,
@@ -5446,10 +5684,15 @@ function openExcelModal() {
           Status: status,
           Amount: amount,
           NO_TXN: noTxn,
+          REFUND_REASON_CODE: refundReason,
           Pmt_Date: pmtDate,
           Pmt_Date_Label: pmtLabel,
           Pmt_Month: pmtMonth,
+          Pmt_Session: stlSession,
+          Phiên: stlSession,
+          STLMT_Final_Date: stlDate,
           STLMT_Final_Month: stlMonth,
+          STLMT_Final_Session: stlSession,
           C_Sender_Name: sInfo.name,
           C_Receiver_Name: rInfo.name,
           Sender_Name: sInfo.name,
@@ -5619,12 +5862,16 @@ function openExcelModal() {
           if (k.includes('thanh toán_2')) stNhan = Number(row[colIdx[k]]) || 0;
         }
 
-        const slTotal = slPhat + slNhan;
-        const stTotal = stPhat + stNhan;
+        // Số lượng giao dịch chuẩn hệ thống = slPhat (không cộng dồn nhận lệnh tránh nhân đôi số liệu)
+        const slTotal = slPhat;
+        const stTotal = stPhat;
         const fee = slTotal * 160.0;
 
         let phienLabel = '1. Sáng';
-        if (phien.includes('Chiều') || phien.includes('150000') || phien.includes('144500')) {
+        const colPhienExplicit = String(row[colIdx['Phiên']] || '').trim();
+        if (colPhienExplicit.includes('Chiều') || colPhienExplicit.includes('2.')) {
+          phienLabel = '2. Chiều';
+        } else if (phien.includes('Chiều') || phien.includes('2.') || phien.includes('150000') || phien.includes('144500')) {
           phienLabel = '2. Chiều';
         }
 
